@@ -11,8 +11,6 @@
   "dependencies": {
     "chalk": "^2.4.2",
     "fs-extra": "^8.1.0",
-    "globby": "^10.0.1",
-    "vst-info": "^1.0.1",
-    "vst-scanner": "^0.0.5"
+    "globby": "^10.0.1"
   }
 }
