@@ -9,6 +9,7 @@
   "author": "JEsse Harlin",
   "license": "ISC",
   "dependencies": {
-    "globby": "^10.0.1"
+    "globby": "^10.0.1",
+    "fs-extra": "^8.1.0"
   }
 }
