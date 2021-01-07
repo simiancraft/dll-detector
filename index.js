@@ -6,8 +6,8 @@ const yargs = require("yargs/yargs");
 const { hideBin } = require("yargs/helpers");
 const argv = yargs(hideBin(process.argv)).argv;
 
-const VST_DIR = __dirname;
-const VST_GLOB = "../../**/*.dll";
+const VST_DIR = argv.dir || _dirname;
+const VST_GLOB = "/**/*.dll";
 
 const SCAN_GLOB = path
   .resolve(path.join(VST_DIR, VST_GLOB))
