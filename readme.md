@@ -8,8 +8,11 @@ The VSTS from the OWL Central repo produce:
 ## usage
 
 locally:
+
 `node index.js --dir="../VST" --list`
+
 globally:
+
 `coming soon`
 
 ## options:
