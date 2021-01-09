@@ -50,20 +50,28 @@ let listFiles = async () => {
     return _a > _b ? 1 : -1;
   }
 
-  function listPlugins(label, plugs) {
+  const possibleMatch = (p) => (checkPlug, i) => {
+    console.log(i);
+    return false;
+  };
+
+  function listPlugins(label, plugs, plugsChecklist) {
     if (plugs.length) {
       const root = path.resolve(VST_DIR).replace(/\\/g, "/");
-      let table = plugs.sort(sortListPlugins).map((p) => {
+      const _plugs = plugs.sort(sortListPlugins);
+      const _plugsChecklist = plugsChecklist.sort(sortListPlugins);
+      let table = _plugs.map((p) => {
         let _file = p.file.replace(root, "");
         let _dir = path.dirname(_file);
         return {
           arch: p.architecture,
-          //   folder: _file.toString(),
           creator: _dir.split("/")[1],
           plug: _dir.split("/").splice(2, 999).join(" | "),
           name: path.basename(_file),
+          match: _plugsChecklist.find(possibleMatch(p)),
         };
       });
+
       console.log(`${label} Plugins: ${plugs.length}`);
       let p = new Table();
 
@@ -81,8 +89,11 @@ let listFiles = async () => {
           currentColor = stripes[stripeIndex];
         }
         let color = { color: currentColor };
-
-        p.addRow(tr, color);
+        if (tr.match) {
+          color = { color: "yellow" };
+        }
+        let _tr = tr;
+        p.addRow(_tr, color);
       });
       p.printTable();
     }
@@ -121,9 +132,9 @@ let listFiles = async () => {
     const plugUnknown = plugins.filter((p) => p.architecture == "unknown");
 
     if (argv.list) {
-      listPlugins("32 Bit", plug32);
-      listPlugins("64 Bit", plug64);
-      listPlugins("??????", plugUnknown);
+      listPlugins("32 Bit", plug32, plug64);
+      listPlugins("64 Bit", plug64, plug32);
+      listPlugins("??????", plugUnknown, []);
     }
 
     if (argv.sortArch) {
