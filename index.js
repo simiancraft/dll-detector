@@ -5,15 +5,14 @@ let path = require("path");
 const yargs = require("yargs/yargs");
 const { hideBin } = require("yargs/helpers");
 const argv = yargs(hideBin(process.argv)).argv;
+const { printTable, Table } = require("console-table-printer");
 
 const VST_DIR = argv.dir || __dirname;
 const VST_GLOB = "/**/*.dll";
 
-const VST64Dir = path.resolve(path.join(VST_DIR, "64")).replace(/\\/g, "/");
+const VST64Dir = path.resolve(path.join(VST_DIR, "../64")).replace(/\\/g, "/");
 
-const VST32Dir = path
-  .resolve(path.join(VST_DIR, "32_linked"))
-  .replace(/\\/g, "/");
+const VST32Dir = path.resolve(path.join(VST_DIR, "../32")).replace(/\\/g, "/");
 
 const SCAN_GLOB = path
   .resolve(path.join(VST_DIR, VST_GLOB))
@@ -45,10 +44,47 @@ let listFiles = async () => {
     return r;
   });
 
+  function sortListPlugins(a, b) {
+    let _a = a.file.toString();
+    let _b = b.file.toString();
+    return _a > _b ? 1 : -1;
+  }
+
   function listPlugins(label, plugs) {
     if (plugs.length) {
+      const root = path.resolve(VST_DIR).replace(/\\/g, "/");
+      let table = plugs.sort(sortListPlugins).map((p) => {
+        let _file = p.file.replace(root, "");
+        let _dir = path.dirname(_file);
+        return {
+          arch: p.architecture,
+          //   folder: _file.toString(),
+          creator: _dir.split("/")[1],
+          plug: _dir.split("/").splice(2, 999).join(" | "),
+          name: path.basename(_file),
+        };
+      });
       console.log(`${label} Plugins: ${plugs.length}`);
-      console.table(plugs);
+      let p = new Table();
+
+      let lastCreator = null;
+      let stripes = ["blue", "magenta", "cyan"];
+      let stripeIndex = -1;
+      let currentColor = null;
+      table.forEach((tr, i) => {
+        if (tr.creator !== lastCreator) {
+          lastCreator = tr.creator;
+          stripeIndex++;
+          if (stripeIndex > stripes.length - 1) {
+            stripeIndex = 0;
+          }
+          currentColor = stripes[stripeIndex];
+        }
+        let color = { color: currentColor };
+
+        p.addRow(tr, color);
+      });
+      p.printTable();
     }
   }
 
@@ -58,17 +94,22 @@ let listFiles = async () => {
     }
   }
 
-  const generateSymlink = (outputDir) => (item, index) => {
+  const generateSymlink = (outputDir, report, arch) => (item, index) => {
     //console.log(item.file, outputDir);
     const root = path.resolve(VST_DIR).replace(/\\/g, "/");
     const predicate = item.file.replace(root, "");
     const newFile = path
       .resolve(path.join(outputDir, predicate))
       .replace(/\\/g, "/");
-    console.log(newFile);
+
     try {
       enforceDir(path.dirname(newFile));
-      fs.symlinkSync(item.file, newFile, "file");
+      if (!fs.existsSync(newFile)) {
+        fs.symlinkSync(item.file, newFile, "file");
+        report.push({ status: "✔️ create", newFile, arch });
+      } else {
+        report.push({ status: "skip", newFile, arch });
+      }
     } catch (err) {
       console.log(err);
     }
@@ -86,8 +127,10 @@ let listFiles = async () => {
     }
 
     if (argv.sortArch) {
-      //plug32.forEach(generateSymlink(VST32Dir));
-      plug64.forEach(generateSymlink(VST64Dir));
+      let report = [];
+      plug32.forEach(generateSymlink(VST32Dir, report, "32-bit"));
+      plug64.forEach(generateSymlink(VST64Dir, report, "64-bit"));
+      console.table(report);
     }
   };
 
