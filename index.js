@@ -9,6 +9,7 @@ const { printTable, Table } = require("console-table-printer");
 
 const VST_DIR = argv.dir || __dirname;
 const VST_GLOB = "/**/*.dll";
+const DEDUPE_ARCH = argv.dedupeArch == "false" ? false : true;
 
 const VST64Dir = path.resolve(path.join(VST_DIR, "../64")).replace(/\\/g, "/");
 
@@ -50,8 +51,26 @@ let listFiles = async () => {
     return _a > _b ? 1 : -1;
   }
 
-  const possibleMatch = (p) => (checkPlug, i) => {
-    console.log(i);
+  const possibleMatch = (p, root) => (checkPlug, i) => {
+    let _fileP = p.file.replace(root, "");
+    let _dirP = path.dirname(_fileP);
+    let creatorP = _dirP.split("/")[1];
+
+    let _fileCP = checkPlug.file.replace(root, "");
+    let _dirCP = path.dirname(_fileCP);
+    let creatorCP = _dirCP.split("/")[1];
+
+    let pad = 80;
+
+    if (creatorP === creatorCP) {
+      let plugP = _dirP.split("/")[2];
+      let plugCP = _dirCP.split("/")[2];
+      if (plugP == plugCP) {
+        //console.log(i, _fileP.padEnd(50, " "), _fileCP);
+        return true;
+      }
+    }
+
     return false;
   };
 
@@ -68,7 +87,7 @@ let listFiles = async () => {
           creator: _dir.split("/")[1],
           plug: _dir.split("/").splice(2, 999).join(" | "),
           name: path.basename(_file),
-          match: _plugsChecklist.find(possibleMatch(p)),
+          match: _plugsChecklist.find(possibleMatch(p, root)) ? "Y" : "",
         };
       });
 
