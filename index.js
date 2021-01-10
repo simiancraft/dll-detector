@@ -10,6 +10,8 @@ const { printTable, Table } = require("console-table-printer");
 const VST_DIR = argv.dir || __dirname;
 const VST_GLOB = "/**/*.dll";
 const DEDUPE_ARCH = argv.dedupeArch == "false" ? false : true;
+const SHOW_SKIPPED = argv.showSkipped == "false" ? false : true;
+const SHOW_MATCHED = argv.showMatched == "false" ? false : true;
 
 const VST64Dir = path.resolve(path.join(VST_DIR, "../64")).replace(/\\/g, "/");
 
@@ -148,12 +150,12 @@ let listFiles = async () => {
     try {
       enforceDir(path.dirname(newFile));
       if (matchingPlugin) {
-        report.push({ status: "☒ matched", newFile, arch });
+        SHOW_MATCHED && report.push({ status: "☒ matched", newFile, arch });
       } else if (!fs.existsSync(newFile)) {
         fs.symlinkSync(item.file, newFile, "file");
         report.push({ status: "✓ linked", newFile, arch });
       } else if (fs.existsSync(newFile)) {
-        report.push({ status: "✗ skipped", newFile, arch });
+        SHOW_SKIPPED && report.push({ status: "✗ skipped", newFile, arch });
       } else {
         report.push({ status: "???", newFile, arch });
       }
